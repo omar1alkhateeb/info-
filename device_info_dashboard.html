@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>لوحة معلومات المتصفح والجهاز</title>
+<style>
+:root{--bg:#071018;--panel:#0e1c28;--line:#244252;--text:#e8f2f7;--muted:#9ab1bd;--accent:#62e6b5;--blue:#7ec8ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#102838,var(--bg) 65%);color:var(--text);font:15px/1.7 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+main{max-width:980px;margin:auto;padding:22px}header{padding:18px 0 10px}h1{font-size:clamp(23px,5vw,36px);margin:0 0 8px}h2{font-size:18px;margin:0 0 12px;color:var(--accent)}p{margin:5px 0;color:var(--muted)}
+.notice{border:1px solid #7c6635;background:#241f12;color:#ffe8a3;border-radius:12px;padding:12px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:13px}.card{background:#0e1c28eF;border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.item{padding:9px 0;border-bottom:1px solid #203744}.item:last-child{border-bottom:0}.key{font-size:12px;color:var(--muted)}.val{overflow-wrap:anywhere;font-weight:600;direction:ltr;text-align:left;color:#f3f8fb}.val.ar{direction:rtl;text-align:right}
+button{border:1px solid var(--accent);background:#11372f;color:#dffff4;border-radius:10px;padding:11px 15px;font:inherit;cursor:pointer;margin:8px 0}button:hover{background:#185044}.status{color:var(--blue);font-size:13px}.foot{font-size:12px;text-align:center;margin:20px 0 8px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>لوحة معلومات الجهاز والمتصفح</h1>
+<p>تعرض هذه الصفحة المعلومات العامة التي يتيحها المتصفح دون طلب أذونات الكاميرا أو الميكروفون أو الموقع.</p>
+</header>
+<div class="notice"><strong>تنبيه خصوصية:</strong> للحصول على عنوان IP العام وموقع تقريبي مشتق منه، تتصل الصفحة بخدمة خارجية هي ipapi.co. قد لا يكون الموقع دقيقًا. لن تطلب الصفحة أذونات الموقع أو الكاميرا أو الميكروفون، ولا ترسل البيانات إلى صاحب هذه الصفحة عبر خادم خاص بها.</div>
+<button id="refresh">تحديث المعلومات</button>
+<span class="status" id="status">تُجمع المعلومات المحلية من المتصفح...</span>
+<div class="grid">
+<section class="card"><h2>الاتصال والشبكة</h2><div id="network"></div></section>
+<section class="card"><h2>الموقع التقريبي وعنوان IP</h2><div id="ip"><div class="item">جارٍ طلب معلومات IP من الخدمة الخارجية...</div></div></section>
+<section class="card"><h2>الجهاز والشاشة</h2><div id="device"></div></section>
+<section class="card"><h2>المتصفح واللغة</h2><div id="browser"></div></section>
+<section class="card"><h2>إعدادات وخصائص المتصفح</h2><div id="settings"></div></section>
+<section class="card"><h2>الزيارة الحالية</h2><div id="visit"></div></section>
+</div>
+<p class="foot">ملاحظة: المعلومات المتاحة تختلف بين المتصفحات. لا تعرض هذه الصفحة كلمات المرور أو الرسائل أو الملفات أو اسم شبكة Wi‑Fi (SSID).</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function esc(x){return String(x??"غير متاح").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function row(k,v,rtl=false){return `<div class="item"><div class="key">${esc(k)}</div><div class="val ${rtl?'ar':''}">${esc(v)}</div></div>`}
+function yesNo(v){return v===true?"نعم":v===false?"لا":"غير متاح"}
+function browserName(ua){
+ if(/Edg\//.test(ua))return "Microsoft Edge";
+ if(/OPR\//.test(ua))return "Opera";
+ if(/SamsungBrowser\//.test(ua))return "Samsung Internet";
+ if(/Firefox\//.test(ua))return "Mozilla Firefox";
+ if(/CriOS\//.test(ua))return "Chrome على iOS";
+ if(/FxiOS\//.test(ua))return "Firefox على iOS";
+ if(/Chrome\//.test(ua))return "Google Chrome أو متصفح مبني عليه";
+ if(/Safari\//.test(ua))return "Safari";
+ return "متصفح غير محدد";
+}
+function renderLocal(){
+ const n=navigator, c=n.connection||n.mozConnection||n.webkitConnection;
+ $("network").innerHTML=
+ row("حالة الاتصال",n.onLine?"متصل حسب المتصفح":"غير متصل حسب المتصفح")+
+ row("نوع الاتصال التقريبي",c?.type||"المتصفح لا يكشفه")+
+ row("فئة الشبكة",c?.effectiveType||"غير متاحة")+
+ row("سرعة تنزيل تقديرية",c?.downlink!=null?c.downlink+" Mbps":"غير متاحة")+
+ row("زمن استجابة تقديري",c?.rtt!=null?c.rtt+" ms":"غير متاح")+
+ row("وضع توفير البيانات",c?.saveData!=null?yesNo(c.saveData):"غير متاح");
+ $("device").innerHTML=
+ row("نوع الجهاز التقريبي",/Mobi|Android|iPhone|iPad/i.test(n.userAgent)?"هاتف أو جهاز محمول":"كمبيوتر أو جهاز لوحي (تقدير)")+
+ row("المنصة",n.userAgentData?.platform||n.platform||"غير متاحة")+
+ row("عدد أنوية المعالج المنطقي",n.hardwareConcurrency||"غير متاح")+
+ row("ذاكرة الجهاز التقريبية",n.deviceMemory?n.deviceMemory+" GB":"غير متاحة")+
+ row("أبعاد الشاشة",screen.width+" × "+screen.height+" CSS px")+
+ row("أبعاد مساحة العرض",innerWidth+" × "+innerHeight+" CSS px")+
+ row("كثافة البكسل",window.devicePixelRatio||"غير متاحة")+
+ row("نقاط اللمس القصوى",n.maxTouchPoints??"غير متاحة");
+ $("browser").innerHTML=
+ row("المتصفح (تقديري)",browserName(n.userAgent))+
+ row("لغة المتصفح",n.language||"غير متاحة")+
+ row("اللغات المفضلة",(n.languages||[]).join(", ")||"غير متاحة")+
+ row("المنطقة الزمنية",Intl.DateTimeFormat().resolvedOptions().timeZone||"غير متاحة")+
+ row("فرق التوقيت عن UTC",-new Date().getTimezoneOffset()/60+" ساعة")+
+ row("نص تعريف المتصفح (User-Agent)",n.userAgent||"غير متاح");
+ $("settings").innerHTML=
+ row("الكوكيز مفعلة",yesNo(n.cookieEnabled))+
+ row("Do Not Track",n.doNotTrack||"غير محدد")+
+ row("JavaScript", "مفعّل")+
+ row("PDF viewer مدمج",yesNo(n.pdfViewerEnabled))+
+ row("ذاكرة التخزين المحلية",typeof localStorage!=="undefined"?"مدعومة في هذا السياق":"غير متاحة")+
+ row("حالة توفير الطاقة",document.visibilityState==="visible"?"الصفحة ظاهرة":"الصفحة في الخلفية");
+ $("visit").innerHTML=
+ row("وقت الزيارة المحلي",new Date().toLocaleString())+
+ row("عنوان الصفحة",location.href)+
+ row("الموقع المُحيل (Referrer)",document.referrer||"لا يوجد أو تم إخفاؤه")+
+ row("بروتوكول الصفحة",location.protocol)+
+ row("حجم الشاشة واتجاهها",screen.orientation?.type||"غير متاح");
+}
+async function loadIP(){
+ const el=$("ip");el.innerHTML=row("الحالة","جارٍ الاتصال بـ ipapi.co...");
+ try{
+  const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),7000);
+  const r=await fetch("https://ipapi.co/json/",{signal:ctrl.signal,cache:"no-store"});clearTimeout(t);
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const d=await r.json();
+  if(d.error)throw new Error(d.reason||"تعذر تحديد IP");
+  el.innerHTML=
+   row("عنوان IP العام",d.ip||"غير متاح")+
+   row("الدولة",d.country_name||d.country||"غير متاح",true)+
+   row("المنطقة / المحافظة",d.region||"غير متاحة",true)+
+   row("المدينة التقريبية",d.city||"غير متاحة",true)+
+   row("الرمز البريدي",d.postal||"غير متاح")+
+   row("المنطقة الزمنية حسب IP",d.timezone||"غير متاحة")+
+   row("مزود الإنترنت / المؤسسة",d.org||"غير متاح",true)+
+   row("مصدر المعلومات","ipapi.co (خدمة خارجية)",true);
+ }catch(e){el.innerHTML=row("تعذر جلب عنوان IP أو الموقع التقريبي","قد تكون الخدمة محجوبة أو الاتصال غير متاح. لا يؤثر ذلك على بقية المعلومات.",true)}
+}
+$("refresh").addEventListener("click",()=>{renderLocal();loadIP();$("status").textContent="تم تحديث المعلومات المحلية؛ يجري تحديث معلومات IP."});
+window.addEventListener("online",()=>{renderLocal();$("status").textContent="عاد الاتصال بالإنترنت."});
+window.addEventListener("offline",()=>{renderLocal();$("status").textContent="المتصفح يبلّغ عن انقطاع الاتصال."});
+renderLocal();loadIP();$("status").textContent="اكتمل جمع المعلومات المتاحة محليًا.";
+</script>
+</body>
+</html>
